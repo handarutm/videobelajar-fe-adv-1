@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useSelector, useDispatch } from "react-redux";
+import { updateUser, deleteUser } from "../../store/profileReducer";
 
 const ProfileEdit = () => {
-  const { currentUser, deleteCurrentUser, updateCurrentUser } = useAuth();
+  const dispatch = useDispatch();
+  const currentUser = useSelector((s) => s.profile.currentUser);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profil");
   const [formData, setFormData] = useState({
@@ -30,27 +32,40 @@ const ProfileEdit = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (currentUser && typeof updateCurrentUser === "function") {
-      const updatedUser = {
-        ...currentUser,
-        name: formData.namaLengkap,
-        email: formData.email,
-        phone: formData.noHp,
-        password: formData.password,
-      };
-      updateCurrentUser(updatedUser);
-    }
-    alert("Profil berhasil disimpan!");
-    navigate("/");
+    if (!currentUser) return;
+    const updatedUser = {
+      ...currentUser,
+      name: formData.namaLengkap,
+      email: formData.email,
+      phone: formData.noHp,
+      password: formData.password,
+    };
+    (async () => {
+      try {
+        await dispatch(updateUser(updatedUser)).unwrap();
+        alert("Profil berhasil disimpan!");
+        navigate("/");
+      } catch (err) {
+        console.error(err);
+        alert("Gagal menyimpan profil");
+      }
+    })();
   };
 
   const handleDeleteAccount = () => {
-    if (currentUser && typeof deleteCurrentUser === "function") {
-      deleteCurrentUser(currentUser.id);
-    }
-    alert("Akun dihapus");
-    setShowDeleteModal(false);
-    setConfirmText("");
+    if (!currentUser) return;
+    (async () => {
+      try {
+        await dispatch(deleteUser(currentUser.id)).unwrap();
+        alert("Akun dihapus");
+        setShowDeleteModal(false);
+        setConfirmText("");
+        navigate("/");
+      } catch (err) {
+        console.error(err);
+        alert("Gagal menghapus akun");
+      }
+    })();
   };
 
   const togglePasswordVisibility = () => {
